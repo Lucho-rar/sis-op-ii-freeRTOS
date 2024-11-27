@@ -1,0 +1,5 @@
+task sensor de temperatura simulado y toma valores con f 10Hz
+task recibe valores y los filtra con pasa bajo de ventana deslizante promediador de las ultimas N muestras
+task que muestra en el display la señal a la salida del filtro
+task que muestre el estado de todas las tareas
+el n va por uart
