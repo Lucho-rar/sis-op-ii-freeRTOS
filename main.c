@@ -65,6 +65,8 @@ static char * cMessage = "Task woken by button interrupt! --- ";
 static volatile char * pcNextChar;
 static int temperature = 22;
 static char buffer[50];
+
+static int signal = 0;
 /* The semaphore used to wake the button handler task from within the GPIO
  * interrupt handler. */
 SemaphoreHandle_t xButtonSemaphore;
@@ -107,26 +109,23 @@ int main( void )
     return 0;
 }
 
-/*-----------------------------------------------------------*/
+
 static void vTaskSensor ( ){
-    //srand(time(NULL));
-
-    // for (;;) {
-    //int randomValue = rand() % 100;  // Número aleatorio entre 0 y 99
-        // Usa el número aleatorio para lo que necesites
-        // vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // }
-    // BaseType_t xApplicationGetRandomNumber( uint32_t * pulNumber );
-
+    // simulo una funcion que llegue a 20 y vuelva a cero, para que sea variable la "medicion" del sensor
+    int temperature_v = 0;         
     for ( ; ; ){
-        temperature ++;
-        // char buffer[50];
-        // sprintf(buffer, "Task Sensor: %d\n", i);
+        if (temperature_v < 20){
+            temperature_v ++ ; 
+        }else{
+            temperature_v = 0;
+        }
+
+        // clean buffer y de momento se imprime solamente
+        memset(buffer, 0 , sizeof(buffer));
         vTaskDelay(1000);
-        // OSRAMInit( false );
-        vIntToString(temperature, buffer);
+        vIntToString(temperature_v, buffer);
+        OSRAMClear();
         OSRAMStringDraw( buffer, 0, 0 );
-    //    printf("Task Sensor: %d\n", i);
     }
 
 }
