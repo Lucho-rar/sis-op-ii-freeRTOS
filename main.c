@@ -74,6 +74,8 @@ SemaphoreHandle_t xButtonSemaphore;
 /* The queue used to send strings to the print task for display on the LCD. */
 QueueHandle_t xPrintQueue;
 
+QueueHandle_t xSensorQueue;
+
 /*-----------------------------------------------------------*/
 
 int main( void )
@@ -99,7 +101,11 @@ int main( void )
     // xTaskCreate( vCheckTask, "Check", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, NULL );
     // xTaskCreate( vButtonHandlerTask, "Status", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL );
     // xTaskCreate( vPrintTask, "Print", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY - 1, NULL );
+
+
     xTaskCreate(vTaskSensor, "Sensor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
+    xSensorQueue = xQueueCreate(50, sizeof(unsigned long));
+
     /* Start the scheduler. */
     vTaskStartScheduler();
 
@@ -121,12 +127,29 @@ static void vTaskSensor ( ){
         }
 
         // clean buffer y de momento se imprime solamente
-        memset(buffer, 0 , sizeof(buffer));
+        //memset(buffer, 0 , sizeof(buffer));
         vTaskDelay(1000);
-        vIntToString(temperature_v, buffer);
-        OSRAMClear();
-        OSRAMStringDraw( buffer, 0, 0 );
+        xQueueSend(xSensorQueue, temperature_v, portMAX_DELAY);
+        //vIntToString(temperature_v, buffer);
+        //OSRAMClear();
+        //OSRAMStringDraw( buffer, 0, 0 );
     }
+
+}
+
+static void vTaskReceiverDataSensor(){
+    int value;
+
+    for ( ; ; ){
+        xQueueReceive(xSensorQueue, &value, portMAX_DELAY);
+        vTaskDelay(1000);
+        vIntToString(value);
+        OSRAMClear();
+        OSRAMStringDraw(buffer, 0 ,0 );
+
+    }
+
+
 
 }
 
