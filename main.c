@@ -58,6 +58,9 @@ static void vButtonHandlerTask( void * pvParameters );
 static void vPrintTask( void * pvParameter );
 
 static void vTaskSensor ( );
+static void vTaskReceiverDataSensor();
+static void vTaskDisplay();
+
 
 static void vIntToString(int value, char *str) ;
 /* String that is transmitted on the UART. */
@@ -75,6 +78,7 @@ SemaphoreHandle_t xButtonSemaphore;
 QueueHandle_t xPrintQueue;
 
 QueueHandle_t xSensorQueue;
+QueueHandle_t xDisplayQueue;
 
 /*-----------------------------------------------------------*/
 
@@ -104,8 +108,12 @@ int main( void )
 
 
     xTaskCreate(vTaskSensor, "Sensor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
-    xSensorQueue = xQueueCreate(50, sizeof(unsigned long));
+    xTaskCreate(vTaskReceiverDataSensor, "Receiver", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
+    xTaskCreate(vTaskDisplay, "Display", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
 
+
+    xSensorQueue = xQueueCreate(50, sizeof(unsigned long));
+    xDisplayQueue = xQueueCreate(50 , sizeof(unsigned long ));
     /* Start the scheduler. */
     vTaskStartScheduler();
 
@@ -129,7 +137,7 @@ static void vTaskSensor ( ){
         // clean buffer y de momento se imprime solamente
         //memset(buffer, 0 , sizeof(buffer));
         vTaskDelay(1000);
-        xQueueSend(xSensorQueue, temperature_v, portMAX_DELAY);
+        xQueueSend(xSensorQueue, &temperature_v, portMAX_DELAY);
         //vIntToString(temperature_v, buffer);
         //OSRAMClear();
         //OSRAMStringDraw( buffer, 0, 0 );
@@ -141,16 +149,32 @@ static void vTaskReceiverDataSensor(){
     int value;
 
     for ( ; ; ){
+        
         xQueueReceive(xSensorQueue, &value, portMAX_DELAY);
-        vTaskDelay(1000);
-        vIntToString(value);
-        OSRAMClear();
-        OSRAMStringDraw(buffer, 0 ,0 );
-
+        int filter = value + 10 ;
+        
+       // vTaskDelay(1000);
+        xQueueSend(xDisplayQueue, &filter, portMAX_DELAY );
+        value = 0 ;
+        //mainSEM_TEST_PRI
+        // vIntToString(value, buffer);
+        // OSRAMClear();
+        // OSRAMStringDraw(buffer, 0 ,0 );
     }
 
 
 
+}
+
+static void vTaskDisplay() {
+    int value_filter; 
+    for ( ; ; ) {
+        xQueueReceive(xDisplayQueue , &value_filter , portMAX_DELAY );
+        // vTaskDelay(1000);
+        vIntToString(value_filter, buffer);
+        OSRAMClear() ;
+        OSRAMStringDraw(buffer, 0, 0);
+    }
 }
 
 
