@@ -146,16 +146,32 @@ static void vTaskSensor ( ){
 }
 
 static void vTaskReceiverDataSensor(){
+    int N = 10;
+    int values[10] = {0};
     int value;
-
+    int filter ;
     for ( ; ; ){
         
         xQueueReceive(xSensorQueue, &value, portMAX_DELAY);
-        int filter = value + 10 ;
         
-       // vTaskDelay(1000);
+        for (int i = 0 ; i < 9 ; i ++) { 
+            values[i] = values[i+1];
+        }
+        values[9] = value;
+        /* Filtro */
+        // tengo q agarrar los 10 valores y promediarlos con un N que cambia por uart de momento lo dejo fijo
+
+        filter = 0;
+        for (int i = 0 ; i < 10 ; i ++){
+            filter += values[i];
+        }
+        filter = filter / N ;
+        //int filter = value + 10 ;
+        
+        // vTaskDelay(1000);
+
         xQueueSend(xDisplayQueue, &filter, portMAX_DELAY );
-        value = 0 ;
+        //value = 0 ;
         //mainSEM_TEST_PRI
         // vIntToString(value, buffer);
         // OSRAMClear();
