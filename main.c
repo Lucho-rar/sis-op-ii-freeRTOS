@@ -14,6 +14,7 @@
 #include "BlockQ.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 /* Delay between cycles of the 'check' task. */
 #define mainCHECK_DELAY            ( ( TickType_t ) 5000 / portTICK_PERIOD_MS )
 
@@ -60,7 +61,7 @@ static void vPrintTask( void * pvParameter );
 static void vTaskSensor ( );
 static void vTaskReceiverDataSensor();
 static void vTaskDisplay();
-
+static void vTaskUpdateN();
 
 static void vIntToString(int value, char *str) ;
 /* String that is transmitted on the UART. */
@@ -79,6 +80,10 @@ QueueHandle_t xPrintQueue;
 
 QueueHandle_t xSensorQueue;
 QueueHandle_t xDisplayQueue;
+QueueHandle_t xUpdateNQueue;
+SemaphoreHandle_t xMutexN;
+
+int valor_ventana = 10;
 
 /*-----------------------------------------------------------*/
 
@@ -110,10 +115,13 @@ int main( void )
     xTaskCreate(vTaskSensor, "Sensor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xTaskCreate(vTaskReceiverDataSensor, "Receiver", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xTaskCreate(vTaskDisplay, "Display", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
+    xTaskCreate(vTaskUpdateN, "UpdateN", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
 
+    xMutexN = xSemaphoreCreateBinary();
 
     xSensorQueue = xQueueCreate(50, sizeof(unsigned long));
     xDisplayQueue = xQueueCreate(50 , sizeof(unsigned long ));
+    xUpdateNQueue = xQueueCreate(50, sizeof(unsigned long));
     /* Start the scheduler. */
     vTaskStartScheduler();
 
@@ -165,10 +173,17 @@ static void vTaskReceiverDataSensor(){
         for (int i = 0 ; i < 10 ; i ++){
             filter += values[i];
         }
+        xSemaphoreTake(xMutexN, portMAX_DELAY);
+        N = valor_ventana;
         filter = filter / N ;
+        xSemaphoreGive(xMutexN);
+        // xSemaphoreTake(xMutexN, portMAX_DELAY);
+        // N = valor_ventana;
+        // filter = filter / N ;
+        // xSemaphoreGive(xMutexN);
         //int filter = value + 10 ;
         
-        // vTaskDelay(1000);
+        //vTaskDelay(1000);
 
         xQueueSend(xDisplayQueue, &filter, portMAX_DELAY );
         //value = 0 ;
@@ -184,16 +199,41 @@ static void vTaskReceiverDataSensor(){
 
 static void vTaskDisplay() {
     int value_filter; 
+    int n_filter = 0;
+   // char buffer_N[50];
+   // char buffer_value[50];
+
     for ( ; ; ) {
         xQueueReceive(xDisplayQueue , &value_filter , portMAX_DELAY );
+       // xSemaphoreTake(xMutexN, portMAX_DELAY);
+       // n_filter = valor_ventana;
+       // xSemaphoreGive(xMutexN);
         // vTaskDelay(1000);
         vIntToString(value_filter, buffer);
+       // vIntToString(n_filter, buffer);
+
+       // strcpy(buffer, "N=");      
+       // strcat(buffer, buffer_N);  
+       // strcat(buffer, " Val=");   
+       // strcat(buffer, buffer_value);
+
+
         OSRAMClear() ;
         OSRAMStringDraw(buffer, 0, 0);
     }
 }
 
 
+static void vTaskUpdateN(){
+    int N = 0;
+    for ( ; ; ){
+        if (xQueueReceive(xUpdateNQueue, &N, portMAX_DELAY) == pdTRUE){
+            xSemaphoreTake(xMutexN, portMAX_DELAY);
+            valor_ventana = N;
+            xSemaphoreGive(xMutexN);
+        }
+    }
+}
 
 
 static void vCheckTask( void * pvParameters )
@@ -331,7 +371,9 @@ static void vButtonHandlerTask( void * pvParameters )
 
 void vUART_ISR( void )
 {
+
     unsigned long ulStatus;
+    int nuevo_N = 0;
 
     /* What caused the interrupt. */
     ulStatus = UARTIntStatus( UART0_BASE, pdTRUE );
@@ -342,15 +384,14 @@ void vUART_ISR( void )
     /* Was a Tx interrupt pending? */
     if( ulStatus & UART_INT_TX )
     {
-        /* Send the next character in the string.  We are not using the FIFO. */
-        if( *pcNextChar != 0 )
-        {
-            if( !( HWREG( UART0_BASE + UART_O_FR ) & UART_FR_TXFF ) )
-            {
-                HWREG( UART0_BASE + UART_O_DR ) = *pcNextChar;
-            }
-
-            pcNextChar++;
+        char c = HWREG( UART0_BASE + UART_O_DR ); /*    Byte received   */
+        if( c >= '0' && c <= '9' ){ /* Valid number */
+            nuevo_N = (nuevo_N * 10) + (c - '0');
+        }else if (c = '\n'){
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+            xQueueSendFromISR(xUpdateNQueue, &nuevo_N, &xHigherPriorityTaskWoken);
+            nuevo_N = 0;
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         }
     }
 }
