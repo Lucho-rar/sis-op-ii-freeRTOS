@@ -15,6 +15,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdarg.h>
+
 /* Delay between cycles of the 'check' task. */
 #define mainCHECK_DELAY            ( ( TickType_t ) 5000 / portTICK_PERIOD_MS )
 
@@ -62,6 +67,10 @@ static void vTaskSensor ( );
 static void vTaskReceiverDataSensor();
 static void vTaskDisplay();
 static void vTaskUpdateN();
+static int get_N_value();
+int putchar(int c);
+int _write(int file, char *ptr, int len);
+void imprimir(const char *fmt, ...);
 
 static void vIntToString(int value, char *str) ;
 /* String that is transmitted on the UART. */
@@ -83,33 +92,22 @@ QueueHandle_t xDisplayQueue;
 QueueHandle_t xUpdateNQueue;
 SemaphoreHandle_t xMutexN;
 
-int valor_ventana = 10;
+int valor_ventana = 9;
+
+
+/******************************* */
+
+#include <sys/stat.h>
+#include <unistd.h>
+
+
 
 /*-----------------------------------------------------------*/
 
 int main( void )
 {
-    /* Configure the clocks, UART and GPIO. */
     prvSetupHardware();
-
-    // /* Create the semaphore used to wake the button handler task from the GPIO
-    //  * ISR. */
-    // vSemaphoreCreateBinary( xButtonSemaphore );
-    // xSemaphoreTake( xButtonSemaphore, 0 );
-
-    // /* Create the queue used to pass message to vPrintTask. */
-    // xPrintQueue = xQueueCreate( mainQUEUE_SIZE, sizeof( char * ) );
-
-    // /* Start the standard demo tasks. */
-    // vStartIntegerMathTasks( tskIDLE_PRIORITY );
-    // vStartPolledQueueTasks( mainQUEUE_POLL_PRIORITY );
-    // vStartSemaphoreTasks( mainSEM_TEST_PRIORITY );
-    // vStartBlockingQueueTasks( mainBLOCK_Q_PRIORITY );
-
-    /* Start the tasks defined within the file. */
-    // xTaskCreate( vCheckTask, "Check", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, NULL );
-    // xTaskCreate( vButtonHandlerTask, "Status", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL );
-    // xTaskCreate( vPrintTask, "Print", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY - 1, NULL );
+    imprimir("Hola, FreeRTOS!!!!\n");
 
 
     xTaskCreate(vTaskSensor, "Sensor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
@@ -124,7 +122,6 @@ int main( void )
     xUpdateNQueue = xQueueCreate(50, sizeof(unsigned long));
     /* Start the scheduler. */
     vTaskStartScheduler();
-
     /* Will only get here if there was insufficient heap to start the
      * scheduler. */
 
@@ -173,10 +170,10 @@ static void vTaskReceiverDataSensor(){
         for (int i = 0 ; i < 10 ; i ++){
             filter += values[i];
         }
-        xSemaphoreTake(xMutexN, portMAX_DELAY);
-        N = valor_ventana;
-        filter = filter / N ;
-        xSemaphoreGive(xMutexN);
+        //xSemaphoreTake(xMutexN, portMAX_DELAY);
+        //N = valor_ventana;
+        filter = get_N_value();
+        //xSemaphoreGive(xMutexN);
         // xSemaphoreTake(xMutexN, portMAX_DELAY);
         // N = valor_ventana;
         // filter = filter / N ;
@@ -223,18 +220,29 @@ static void vTaskDisplay() {
     }
 }
 
+int putchar(int c) {
+    UARTCharPut(UART0_BASE, c);  // Envía el carácter por la UART0
+    return c;
+}
 
 static void vTaskUpdateN(){
     int N = 0;
     for ( ; ; ){
         if (xQueueReceive(xUpdateNQueue, &N, portMAX_DELAY) == pdTRUE){
-            xSemaphoreTake(xMutexN, portMAX_DELAY);
+           // xSemaphoreTake(xMutexN, portMAX_DELAY);
             valor_ventana = N;
-            xSemaphoreGive(xMutexN);
+       //     xSemaphoreGive(xMutexN);
         }
     }
 }
 
+static int get_N_value(){
+    int aux;
+   // xSemaphoreTake(xMutexN, portMAX_DELAY);
+    aux = valor_ventana;
+    return aux;
+    //xSemaphoreGive(xMutexN);
+}
 
 static void vCheckTask( void * pvParameters )
 {
@@ -465,4 +473,20 @@ void vIntToString(int num, char *str) {
         start++;
         end--;
     }
+}
+
+void imprimir(const char *fmt, ...) {
+    char buffer[256];  // Buffer para almacenar la cadena formateada
+    va_list args;
+    va_start(args, fmt);
+
+    // Usar vsprintf para formatear la cadena
+    vsprintf(buffer, fmt, args);
+
+    // Enviar el mensaje a través de UART carácter por carácter
+    for (int i = 0; buffer[i] != '\0'; i++) {
+        putchar(buffer[i]);
+    }
+
+    va_end(args);
 }

@@ -30,8 +30,8 @@ MEMORY
 {
     FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 64K
     SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 8K
+    EXIDX (r) : ORIGIN = 0x20020000, LENGTH = 4K  
 }
-
 SECTIONS
 {
     .text :
@@ -50,11 +50,17 @@ SECTIONS
         _edata = .;
     } > SRAM
 
+    .ARM.exidx :
+    {
+        *(.ARM.exidx)
+    } > EXIDX  
+
     .bss :
     {
         _bss = .;
         *(.bss)
         *(COMMON)
         _ebss = .;
+        _end = .; 
     } > SRAM
 }
