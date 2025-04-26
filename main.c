@@ -92,7 +92,7 @@ QueueHandle_t xDisplayQueue;
 QueueHandle_t xUpdateNQueue;
 SemaphoreHandle_t xMutexN;
 
-int valor_ventana = 9;
+int valor_ventana = 1;
 
 
 /******************************* */
@@ -107,7 +107,6 @@ int valor_ventana = 9;
 int main( void )
 {
     prvSetupHardware();
-    imprimir("Hola, FreeRTOS!!!!\n");
 
 
     xTaskCreate(vTaskSensor, "Sensor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
@@ -129,6 +128,9 @@ int main( void )
 }
 
 
+/*
+    @brief Task sensor
+*/
 static void vTaskSensor ( ){
     // simulo una funcion que llegue a 20 y vuelva a cero, para que sea variable la "medicion" del sensor
     int temperature_v = 0;         
@@ -139,10 +141,8 @@ static void vTaskSensor ( ){
             temperature_v = 0;
         }
 
-        // clean buffer y de momento se imprime solamente
-        //memset(buffer, 0 , sizeof(buffer));
         vTaskDelay(1000);
-        xQueueSend(xSensorQueue, &temperature_v, portMAX_DELAY);
+        xQueueSend(xSensorQueue, &temperature_v, portMAX_DELAY); // Se lo envio al filtro
         //vIntToString(temperature_v, buffer);
         //OSRAMClear();
         //OSRAMStringDraw( buffer, 0, 0 );
@@ -151,43 +151,31 @@ static void vTaskSensor ( ){
 }
 
 static void vTaskReceiverDataSensor(){
-    int N = 10;
     int values[10] = {0};
     int value;
     int filter ;
+    int N ;
     for ( ; ; ){
         
         xQueueReceive(xSensorQueue, &value, portMAX_DELAY);
         
-        for (int i = 0 ; i < 9 ; i ++) { 
+        for (int i = 0 ; i < 9 ; i ++) {  //armo el buffer para guardar los ultimos 10 valores
             values[i] = values[i+1];
         }
         values[9] = value;
-        /* Filtro */
-        // tengo q agarrar los 10 valores y promediarlos con un N que cambia por uart de momento lo dejo fijo
 
+
+        // Aplico el filtro de la ventana (sumar los N valores y promiedos)
         filter = 0;
-        for (int i = 0 ; i < 10 ; i ++){
+        N = get_N_value();
+        for (int i = 0 ; i < N ; i ++){
             filter += values[i];
         }
-        //xSemaphoreTake(xMutexN, portMAX_DELAY);
-        //N = valor_ventana;
-        filter = get_N_value();
-        //xSemaphoreGive(xMutexN);
-        // xSemaphoreTake(xMutexN, portMAX_DELAY);
-        // N = valor_ventana;
-        // filter = filter / N ;
-        // xSemaphoreGive(xMutexN);
-        //int filter = value + 10 ;
-        
-        //vTaskDelay(1000);
+        //TODO debug
+        filter = filter / N ;
 
-        xQueueSend(xDisplayQueue, &filter, portMAX_DELAY );
-        //value = 0 ;
-        //mainSEM_TEST_PRI
-        // vIntToString(value, buffer);
-        // OSRAMClear();
-        // OSRAMStringDraw(buffer, 0 ,0 );
+
+        xQueueSend(xDisplayQueue, &filter, portMAX_DELAY ); // se lo mando al display
     }
 
 
@@ -197,51 +185,36 @@ static void vTaskReceiverDataSensor(){
 static void vTaskDisplay() {
     int value_filter; 
     int n_filter = 0;
-   // char buffer_N[50];
-   // char buffer_value[50];
 
     for ( ; ; ) {
         xQueueReceive(xDisplayQueue , &value_filter , portMAX_DELAY );
-       // xSemaphoreTake(xMutexN, portMAX_DELAY);
-       // n_filter = valor_ventana;
-       // xSemaphoreGive(xMutexN);
-        // vTaskDelay(1000);
         vIntToString(value_filter, buffer);
-       // vIntToString(n_filter, buffer);
-
-       // strcpy(buffer, "N=");      
-       // strcat(buffer, buffer_N);  
-       // strcat(buffer, " Val=");   
-       // strcat(buffer, buffer_value);
-
 
         OSRAMClear() ;
         OSRAMStringDraw(buffer, 0, 0);
     }
 }
 
+
+// TODO: mover esto a un archivo de cabecera
 int putchar(int c) {
     UARTCharPut(UART0_BASE, c);  // Envía el carácter por la UART0
     return c;
 }
 
 static void vTaskUpdateN(){
-    int N = 0;
+    int N = 1;
     for ( ; ; ){
         if (xQueueReceive(xUpdateNQueue, &N, portMAX_DELAY) == pdTRUE){
-           // xSemaphoreTake(xMutexN, portMAX_DELAY);
             valor_ventana = N;
-       //     xSemaphoreGive(xMutexN);
         }
     }
 }
 
 static int get_N_value(){
-    int aux;
-   // xSemaphoreTake(xMutexN, portMAX_DELAY);
-    aux = valor_ventana;
-    return aux;
-    //xSemaphoreGive(xMutexN);
+
+    return valor_ventana;
+
 }
 
 static void vCheckTask( void * pvParameters )
@@ -332,6 +305,11 @@ static void prvSetupHardware( void )
     IntPrioritySet( INT_UART0, configKERNEL_INTERRUPT_PRIORITY );
     IntEnable( INT_UART0 );
 
+    /* Enable Rx interrupts. */
+    HWREG( UART0_BASE + UART_O_IM ) |= UART_INT_RX;
+    IntPrioritySet( INT_UART0, configKERNEL_INTERRUPT_PRIORITY );
+    IntEnable( INT_UART0 );
+
 
     // /* Initialise the LCD> */
     OSRAMInit( false );
@@ -383,25 +361,28 @@ void vUART_ISR( void )
     unsigned long ulStatus;
     int nuevo_N = 0;
 
-    /* What caused the interrupt. */
+    // me fijo la flag de interrupcion
     ulStatus = UARTIntStatus( UART0_BASE, pdTRUE );
 
-    /* Clear the interrupt. */
+   //clean
     UARTIntClear( UART0_BASE, ulStatus );
 
-    /* Was a Tx interrupt pending? */
-    if( ulStatus & UART_INT_TX )
+    /* si es RX leo el caracter para ver si quiere aumentar o disminuir */
+    if( ulStatus & UART_INT_RX )
     {
         char c = HWREG( UART0_BASE + UART_O_DR ); /*    Byte received   */
-        if( c >= '0' && c <= '9' ){ /* Valid number */
-            nuevo_N = (nuevo_N * 10) + (c - '0');
-        }else if (c = '\n'){
-            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-            xQueueSendFromISR(xUpdateNQueue, &nuevo_N, &xHigherPriorityTaskWoken);
-            nuevo_N = 0;
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        if (c == 'U'){
+            imprimir("Aumento"); 
+            nuevo_N = get_N_value() + 1;
+            xQueueSend(xUpdateNQueue, &nuevo_N, portMAX_DELAY);
+
+        }else if (c == 'D'){
+            imprimir("Disminuir");
+            nuevo_N = get_N_value() - 1;
+            xQueueSend(xUpdateNQueue, &nuevo_N, portMAX_DELAY);
         }
     }
+
 }
 /*-----------------------------------------------------------*/
 
@@ -490,3 +471,4 @@ void imprimir(const char *fmt, ...) {
 
     va_end(args);
 }
+

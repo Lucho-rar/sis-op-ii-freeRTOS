@@ -45,7 +45,7 @@ OBJS=${COMPILER}/main.o	\
 	  ${COMPILER}/integer.o	\
 	  ${COMPILER}/semtest.o \
 	  ${COMPILER}/osram96x16.o \
-	  ${COMPILER}/sys_cfg.o \
+	  ${COMPILER}/syscalls.o \
 
 INIT_OBJS= ${COMPILER}/startup.o
 
