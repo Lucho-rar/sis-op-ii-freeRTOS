@@ -134,6 +134,7 @@ int main( void )
 static void vTaskSensor ( ){
     // simulo una funcion que llegue a 20 y vuelva a cero, para que sea variable la "medicion" del sensor
     int temperature_v = 0;         
+    char buffercito[64];
     for ( ; ; ){
         if (temperature_v < 20){
             temperature_v ++ ; 
@@ -143,9 +144,19 @@ static void vTaskSensor ( ){
 
         vTaskDelay(1000);
         xQueueSend(xSensorQueue, &temperature_v, portMAX_DELAY); // Se lo envio al filtro
-        //vIntToString(temperature_v, buffer);
-        //OSRAMClear();
-        //OSRAMStringDraw( buffer, 0, 0 );
+        // sendUART0("hola wachin\n");
+        vIntToString(temperature_v, buffercito); // Convertir el entero a cadena
+        //itoa(temperature_v, buffercito, 10); // Convertir el entero a cadena
+        // // Enviar la cadena a través de UART0
+        // sendUART0(buffercito);
+        //snprintf(buffercito, sizeof(buffercito), "Raw temperature: %d\n", temperature_v);
+        // sendUART0("\nRaw temperature: ");
+        // sendUART0(buffercito);
+
+        //imprimir("Temperatura: %s\n", buffercito);
+        // vIntToString(temperature_v, buffercito);
+        // OSRAMClear();
+        // OSRAMStringDraw( buffercito, 0, 0 );
     }
 
 }
@@ -159,7 +170,7 @@ static void vTaskReceiverDataSensor(){
         
         xQueueReceive(xSensorQueue, &value, portMAX_DELAY);
         
-        for (int i = 0 ; i < 9 ; i ++) {  //armo el buffer para guardar los ultimos 10 valores
+        for (int i = 0 ; i < 10 ; i ++) {  //armo el buffer para guardar los ultimos 10 valores
             values[i] = values[i+1];
         }
         values[9] = value;
@@ -173,8 +184,19 @@ static void vTaskReceiverDataSensor(){
         }
         //TODO debug
         filter = filter / N ;
-
-
+        vIntToString(N, buffer);
+        sendUART0("\nN: ");
+        sendUART0(buffer);
+        vIntToString(values[9], buffer);
+        sendUART0("\nUltimo valor: ");
+        sendUART0(buffer);
+        //vIntToString(filter, buffer);
+        //sendUART0(buffer);
+        // vIntToString(N, buffer);
+        // imprimir("Filtro: %s\n", buffer);
+        // OSRAMClear();
+        // OSRAMStringDraw(buffer, 0, 0);
+        // vTaskDelay(1000);
         xQueueSend(xDisplayQueue, &filter, portMAX_DELAY ); // se lo mando al display
     }
 
@@ -298,10 +320,11 @@ static void prvSetupHardware( void )
 
     /* We don't want to use the fifo.  This is for test purposes to generate
      * as many interrupts as possible. */
-    HWREG( UART0_BASE + UART_O_LCR_H ) &= ~mainFIFO_SET;
+    HWREG(UART0_BASE + UART_O_LCR_H) |= mainFIFO_SET;
+
 
     /* Enable Tx interrupts. */
-    HWREG( UART0_BASE + UART_O_IM ) |= UART_INT_TX;
+   // HWREG( UART0_BASE + UART_O_IM ) |= UART_INT_TX;
     IntPrioritySet( INT_UART0, configKERNEL_INTERRUPT_PRIORITY );
     IntEnable( INT_UART0 );
 
@@ -472,3 +495,22 @@ void imprimir(const char *fmt, ...) {
     va_end(args);
 }
 
+
+
+/**
+ * @brief Enviar una cadena de caracteres a través de UART0.
+ * 
+ * @param string Cadena de caracteres a enviar.
+ */
+void sendUART0(const char *string) {
+	while (*string != '\0') {
+		UARTCharPut(UART0_BASE, *string);
+		string++;
+	}
+}
+
+
+void UARTCharPutSafe(uint32_t base, char c) {
+    while (HWREG(base + UART_O_FR) & UART_FR_TXFF); // Espera si el FIFO está lleno
+    HWREG(base + UART_O_DR) = c;
+}
