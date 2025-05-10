@@ -142,10 +142,14 @@ static void vTaskSensor ( ){
             temperature_v = 0;
         }
 
-        vTaskDelay(1000);
+        vTaskDelay(3000);
         xQueueSend(xSensorQueue, &temperature_v, portMAX_DELAY); // Se lo envio al filtro
         // sendUART0("hola wachin\n");
         vIntToString(temperature_v, buffercito); // Convertir el entero a cadena
+        sendUART0("\n[INFO] | TaskSensor | Temperature: ");
+        sendUART0(buffercito);
+        sendUART0("ºC");
+        // Enviar el valor de temperature_v
         //itoa(temperature_v, buffercito, 10); // Convertir el entero a cadena
         // // Enviar la cadena a través de UART0
         // sendUART0(buffercito);
@@ -166,14 +170,19 @@ static void vTaskReceiverDataSensor(){
     int value;
     int filter ;
     int N ;
+    N = get_N_value();
+    vIntToString(N, buffer);
+    sendUART0("\n[INFO] | TaskReceiverDataSensor | N initial: ");
+    sendUART0(buffer);
+
     for ( ; ; ){
         
         xQueueReceive(xSensorQueue, &value, portMAX_DELAY);
         
-        for (int i = 0 ; i < 10 ; i ++) {  //armo el buffer para guardar los ultimos 10 valores
-            values[i] = values[i+1];
+        for (int i = 9; i > 0; i--) {  // Desplazo los valores hacia atrás en el buffer
+            values[i] = values[i-1];
         }
-        values[9] = value;
+        values[0] = value;  // Guardo el nuevo valor en la primera posición
 
 
         // Aplico el filtro de la ventana (sumar los N valores y promiedos)
@@ -185,11 +194,10 @@ static void vTaskReceiverDataSensor(){
         //TODO debug
         filter = filter / N ;
         vIntToString(N, buffer);
-        sendUART0("\nN: ");
+        sendUART0("\n[INFO] | TaskReceiverDataSensor | Value filtered: ");
         sendUART0(buffer);
-        vIntToString(values[9], buffer);
-        sendUART0("\nUltimo valor: ");
-        sendUART0(buffer);
+        // vIntToString(values[9], buffer);
+        // sendUART0("\nUltimo valor: ");
         //vIntToString(filter, buffer);
         //sendUART0(buffer);
         // vIntToString(N, buffer);
@@ -211,7 +219,8 @@ static void vTaskDisplay() {
     for ( ; ; ) {
         xQueueReceive(xDisplayQueue , &value_filter , portMAX_DELAY );
         vIntToString(value_filter, buffer);
-
+        sendUART0("\n[INFO] | TaskDisplay | Filtered value: ");
+        sendUART0(buffer);
         OSRAMClear() ;
         OSRAMStringDraw(buffer, 0, 0);
     }
@@ -229,6 +238,9 @@ static void vTaskUpdateN(){
     for ( ; ; ){
         if (xQueueReceive(xUpdateNQueue, &N, portMAX_DELAY) == pdTRUE){
             valor_ventana = N;
+            vIntToString(N, buffer);
+            sendUART0("\n[INFO] | TaskUpdateN | N: ");
+            sendUART0(buffer);
         }
     }
 }
@@ -395,12 +407,12 @@ void vUART_ISR( void )
     {
         char c = HWREG( UART0_BASE + UART_O_DR ); /*    Byte received   */
         if (c == 'U'){
-            imprimir("Aumento"); 
             nuevo_N = get_N_value() + 1;
+            sendUART0("\n[INFO] | UART_ISR | N incremented");
             xQueueSend(xUpdateNQueue, &nuevo_N, portMAX_DELAY);
 
         }else if (c == 'D'){
-            imprimir("Disminuir");
+            sendUART0("\n[INFO] | UART_ISR | N decremented");
             nuevo_N = get_N_value() - 1;
             xQueueSend(xUpdateNQueue, &nuevo_N, portMAX_DELAY);
         }
