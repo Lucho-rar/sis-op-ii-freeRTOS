@@ -67,7 +67,10 @@ static void vTaskSensor ( );
 static void vTaskReceiverDataSensor();
 static void vTaskDisplay();
 static void vTaskUpdateN();
+//void vAFunction( void );
+static void vTaskMonitor();
 static int get_N_value();
+const char* getStateName(eTaskState state);
 int putchar(int c);
 int _write(int file, char *ptr, int len);
 void imprimir(const char *fmt, ...);
@@ -113,7 +116,7 @@ int main( void )
     xTaskCreate(vTaskReceiverDataSensor, "Receiver", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xTaskCreate(vTaskDisplay, "Display", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xTaskCreate(vTaskUpdateN, "UpdateN", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
-
+    xTaskCreate(vTaskMonitor, "Monitor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xMutexN = xSemaphoreCreateBinary();
 
     xSensorQueue = xQueueCreate(50, sizeof(unsigned long));
@@ -127,7 +130,62 @@ int main( void )
     return 0;
 }
 
+// Habilitar las estadísticas
+static void vTaskMonitor( void )
+{
+    char buffercin[64];
+    TaskHandle_t xHandle;
+    TaskStatus_t xTaskDetails;
+    while(1){
+       // vTaskDelay(2000);
+        /* Obtain the handle of a task from its name. */
+        xHandle = xTaskGetHandle( "Sensor" );
+    
+        /* Check the handle is not NULL. */
+        configASSERT( xHandle );
+    
+        /* Use the handle to obtain further information about the task. */
+        vTaskGetInfo( /* The handle of the task being queried. */
+                      xHandle,
+                      /* The TaskStatus_t structure to complete with information
+                         on xTask. */
+                      &xTaskDetails,
+                      /* Include the stack high water mark value in the
+                         TaskStatus_t structure. */
+                      pdTRUE,
+                      /* Include the task state in the TaskStatus_t structure. */
+                      eInvalid );
+        
+        sendUART0("\n[INFO] | vTaskMonitor | Task Statistics:\n");
+        sprintf(buffercin, "\n\n\n\nTask: %s\r", xTaskDetails.pcTaskName);
+        sendUART0(buffercin);
+        sprintf(buffercin, "Estado: %s\r\n", getStateName(xTaskDetails.eCurrentState));
+        sendUART0(buffercin);
+        memset(buffercin, 0, sizeof(buffercin));
+        sprintf(buffercin, "Prioridad: %lu\r\n", (unsigned long)xTaskDetails.uxCurrentPriority);
+        sendUART0(buffercin);
+        memset(buffercin, 0, sizeof(buffercin));
+        vIntToString(xTaskDetails.usStackHighWaterMark, buffercin);
+        sendUART0("Stack free: ");
+        sendUART0(buffercin);
 
+        vTaskDelay(5000);
+    }
+
+}
+
+
+
+const char* getStateName(eTaskState state) {
+    switch (state) {
+        case eRunning: return "Running";
+        case eReady: return "Ready";
+        case eBlocked: return "Blocked";
+        case eSuspended: return "Suspended";
+        case eDeleted: return "Deleted";
+        default: return "Unknown";
+    }
+}
 /*
     @brief Task sensor
 */
@@ -149,6 +207,8 @@ static void vTaskSensor ( ){
         sendUART0("\n[INFO] | TaskSensor | Temperature: ");
         sendUART0(buffercito);
         sendUART0("ºC");
+        //vAFunction(); // Llamo a la funcion que imprime las estadisticas de la tarea
+     //   getTaskStatistics();
         // Enviar el valor de temperature_v
         //itoa(temperature_v, buffercito, 10); // Convertir el entero a cadena
         // // Enviar la cadena a través de UART0
@@ -225,6 +285,7 @@ static void vTaskDisplay() {
         OSRAMStringDraw(buffer, 0, 0);
     }
 }
+
 
 
 // TODO: mover esto a un archivo de cabecera
@@ -492,7 +553,7 @@ void vIntToString(int num, char *str) {
 }
 
 void imprimir(const char *fmt, ...) {
-    char buffer[256];  // Buffer para almacenar la cadena formateada
+    char buffer[64];  // Buffer para almacenar la cadena formateada
     va_list args;
     va_start(args, fmt);
 
@@ -526,3 +587,4 @@ void UARTCharPutSafe(uint32_t base, char c) {
     while (HWREG(base + UART_O_FR) & UART_FR_TXFF); // Espera si el FIFO está lleno
     HWREG(base + UART_O_DR) = c;
 }
+
