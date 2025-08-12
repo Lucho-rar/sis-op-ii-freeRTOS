@@ -116,7 +116,7 @@ int main( void )
     xTaskCreate(vTaskReceiverDataSensor, "Receiver", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xTaskCreate(vTaskDisplay, "Display", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xTaskCreate(vTaskUpdateN, "UpdateN", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
-    xTaskCreate(vTaskMonitor, "Monitor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
+     xTaskCreate(vTaskMonitor, "Monitor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xMutexN = xSemaphoreCreateBinary();
 
     xSensorQueue = xQueueCreate(50, sizeof(unsigned long));
@@ -130,40 +130,24 @@ int main( void )
     return 0;
 }
 
-// Habilitar las estadísticas
 static void vTaskMonitor( void )
 {
     char buffercin[64];
     TaskHandle_t xHandle;
     TaskStatus_t xTaskDetails;
     while(1){
-       // vTaskDelay(2000);
-        /* Obtain the handle of a task from its name. */
         xHandle = xTaskGetHandle( "Sensor" );
-    
-        /* Check the handle is not NULL. */
         configASSERT( xHandle );
-    
-        /* Use the handle to obtain further information about the task. */
-        vTaskGetInfo( /* The handle of the task being queried. */
-                      xHandle,
-                      /* The TaskStatus_t structure to complete with information
-                         on xTask. */
-                      &xTaskDetails,
-                      /* Include the stack high water mark value in the
-                         TaskStatus_t structure. */
-                      pdTRUE,
-                      /* Include the task state in the TaskStatus_t structure. */
-                      eInvalid );
+        vTaskGetInfo(xHandle, &xTaskDetails, pdTRUE, eInvalid);
         
         sendUART0("\n[INFO] | vTaskMonitor | Task Statistics:\n");
-        sprintf(buffercin, "\n\n\n\nTask: %s\r", xTaskDetails.pcTaskName);
-        sendUART0(buffercin);
-        sprintf(buffercin, "Estado: %s\r\n", getStateName(xTaskDetails.eCurrentState));
-        sendUART0(buffercin);
+        sendUART0(xTaskDetails.pcTaskName);
+
+        // Si sprintf te rompe, prueba esto:
         memset(buffercin, 0, sizeof(buffercin));
-        sprintf(buffercin, "Prioridad: %lu\r\n", (unsigned long)xTaskDetails.uxCurrentPriority);
+        snprintf(buffercin, sizeof(buffercin), "Prioridad: %u\r\n", xTaskDetails.uxCurrentPriority);
         sendUART0(buffercin);
+
         memset(buffercin, 0, sizeof(buffercin));
         vIntToString(xTaskDetails.usStackHighWaterMark, buffercin);
         sendUART0("Stack free: ");
@@ -171,11 +155,7 @@ static void vTaskMonitor( void )
 
         vTaskDelay(5000);
     }
-
 }
-
-
-
 const char* getStateName(eTaskState state) {
     switch (state) {
         case eRunning: return "Running";
