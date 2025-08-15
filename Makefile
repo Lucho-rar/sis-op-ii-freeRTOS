@@ -30,8 +30,8 @@ DEMO_SOURCE_DIR=./Common/Minimal
 
 CFLAGS+= -I include -I hw_include -I . -I ${RTOS_SOURCE_DIR}/include \
          -I ${RTOS_SOURCE_DIR}/portable/GCC/ARM_CM3 -I ../Common/include \
-         -I driverlib -I inc -D GCC_ARMCM3_LM3S102 -D inline=
-
+         -I driverlib -I inc -D GCC_ARMCM3_LM3S102 -D inline= \
+		 -Wall -Wextra -pedantic 
 VPATH=${RTOS_SOURCE_DIR}:${RTOS_SOURCE_DIR}/portable/MemMang:${RTOS_SOURCE_DIR}/portable/GCC/ARM_CM3:${DEMO_SOURCE_DIR}:init:hw_include
 
 OBJS=${COMPILER}/main.o	\

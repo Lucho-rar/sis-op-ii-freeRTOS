@@ -74,6 +74,7 @@ const char* getStateName(eTaskState state);
 int putchar(int c);
 int _write(int file, char *ptr, int len);
 void imprimir(const char *fmt, ...);
+void sendUART0(const char *string);
 
 static void vIntToString(int value, char *str) ;
 /* String that is transmitted on the UART. */
@@ -116,7 +117,7 @@ int main( void )
     xTaskCreate(vTaskReceiverDataSensor, "Receiver", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xTaskCreate(vTaskDisplay, "Display", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xTaskCreate(vTaskUpdateN, "UpdateN", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
-     xTaskCreate(vTaskMonitor, "Monitor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
+     xTaskCreate(vTaskMonitor, "Monitor", configMINIMAL_STACK_SIZE * 2, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
     xMutexN = xSemaphoreCreateBinary();
 
     xSensorQueue = xQueueCreate(50, sizeof(unsigned long));
@@ -143,14 +144,21 @@ static void vTaskMonitor( void )
         sendUART0("\n[INFO] | vTaskMonitor | Task Statistics:\n");
         sendUART0(xTaskDetails.pcTaskName);
 
+
         // Si sprintf te rompe, prueba esto:
         memset(buffercin, 0, sizeof(buffercin));
-        snprintf(buffercin, sizeof(buffercin), "Prioridad: %u\r\n", xTaskDetails.uxCurrentPriority);
+       sendUART0("\nPriority: ");
+       // snprintf(buffercin, sizeof(buffercin), "Prioridad: %u\r\n", xTaskDetails.uxCurrentPriority);
+           // sendUART0(buffercin);
+       // sendUART0(
+        vIntToString(xTaskDetails.uxCurrentPriority, buffercin);
         sendUART0(buffercin);
+           
+
 
         memset(buffercin, 0, sizeof(buffercin));
         vIntToString(xTaskDetails.usStackHighWaterMark, buffercin);
-        sendUART0("Stack free: ");
+        sendUART0("\nStack free: ");
         sendUART0(buffercin);
 
         vTaskDelay(5000);
