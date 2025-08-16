@@ -25,7 +25,7 @@
 
 include makedefs
 
-RTOS_SOURCE_DIR=./Source
+RTOS_SOURCE_DIR=./FreeRTOS-Kernel
 DEMO_SOURCE_DIR=./Common/Minimal
 
 CFLAGS+= -I include -I hw_include -I . -I ${RTOS_SOURCE_DIR}/include \
@@ -40,10 +40,6 @@ OBJS=${COMPILER}/main.o	\
       ${COMPILER}/tasks.o   \
       ${COMPILER}/port.o    \
       ${COMPILER}/heap_1.o  \
-	  ${COMPILER}/BlockQ.o	\
-	  ${COMPILER}/PollQ.o	\
-	  ${COMPILER}/integer.o	\
-	  ${COMPILER}/semtest.o \
 	  ${COMPILER}/osram96x16.o \
 	  ${COMPILER}/syscalls.o \
 

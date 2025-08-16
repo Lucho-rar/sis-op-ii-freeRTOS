@@ -8,10 +8,11 @@
 #include "semphr.h"
 
 /* Demo app includes. */
-#include "integer.h"
+/*#include "integer.h"
 #include "PollQ.h"
 #include "semtest.h"
 #include "BlockQ.h"
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
