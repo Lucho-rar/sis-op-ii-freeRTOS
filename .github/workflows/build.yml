@@ -1,0 +1,27 @@
+name: Build FreeRTOS project
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Clona el repo con submódulos
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      # Instala toolchain ARM (gcc-arm-none-eabi)
+      - name: Install ARM GCC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi make
+
+      # Compila tu proyecto
+      - name: Build project
+        run: make
+
