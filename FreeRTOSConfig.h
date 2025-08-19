@@ -50,7 +50,7 @@
 #define configUSE_TRACE_FACILITY	1
 #define configUSE_16_BIT_TICKS		0
 #define configIDLE_SHOULD_YIELD		0
-
+#define configGENERATE_RUN_TIME_STATS    0
 #define configMAX_PRIORITIES		( 5 )
 
 /* Set the following definitions to 1 to include the API function, or zero

@@ -1,6 +1,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
+#ifndef tBoolean
+typedef unsigned char tBoolean;
+#define true 1
+#define false 0
+#endif
+// #include "inc/hw_memmap.h"
+#include "hw_include/uart.h"
+#include "hw_include/hw_types.h"
+#include "hw_include/hw_memmap.h"
+// #include "inc/hw_types.h"
 
 extern char _end;
 static char *heap_end;
@@ -24,10 +34,9 @@ void _exit(int status) { while (1); }
 int _kill(int pid, int sig) { errno = EINVAL; return -1; }
 int _getpid(void) { return 1; }
 int _write(int file, char *ptr, int len) {
-    // int i;
-    // for (i = 0; i < len; i++) {
-    //     // Send the character to the UART or any other output device
-    //     // For example, using UARTSend(ptr[i]);
-    // }
+    int i;
+    for (i = 0; i < len; i++) {
+        UARTCharPut(UART0_BASE, ptr[i]);
+    }
     return len;
 }
