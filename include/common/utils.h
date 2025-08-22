@@ -45,8 +45,9 @@ extern QueueHandle_t xUpdateNQueue;
 extern SemaphoreHandle_t xMutexN;
 extern QueueHandle_t xDisplayQueue;
 
+extern int valor_ventana;
 
-
+static char buffer[50];
 void sendUART0(const char *string);
 void vIntToString(int value, char *str);
 

@@ -2,7 +2,7 @@
 #include "DriverLib.h"
 
 
-static char buffer[50];
+
 void vTaskDisplay(void *pvParameters) {
     int value_filter;
     static int buffer_onda[96] = {0};

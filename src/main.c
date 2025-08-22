@@ -3,6 +3,7 @@
 #include "common/utils.h"
 #include "tasks/display_task.h"
 #include "tasks/sensor_task.h"
+#include "tasks/receiver_task.h"
 #include "DriverLib.h"
 
 
@@ -18,21 +19,18 @@ static void prvSetupHardware( void );
 
 /*############## declaraciones de funciones propias ###############*/
 
-
-// tareas
-// static void vTaskSensor ( );
-static void vTaskReceiverDataSensor();
+// static void vTaskReceiverDataSensor();
 static void vTaskUpdateN();
 
 // getters y funciones de print
-static int get_N_value();
+// static int get_N_value();
 const char* getStateName(eTaskState state);
 int putchar(int c);
 int _write(int file, char *ptr, int len);
 
 // global
 static char buffer[50];
-int valor_ventana = 1;
+
 
 
 
@@ -74,42 +72,7 @@ int main( void )
 */
 
 
-static void vTaskReceiverDataSensor(){
-    int values[10] = {0};
-    int value;
-    int filter ;
-    int N ;
-    N = get_N_value();
-    vIntToString(N, buffer);
-    sendUART0("\n[INFO] | TaskReceiverDataSensor | N initial: ");
-    sendUART0(buffer);
 
-    for ( ; ; ){
-        xQueueReceive(xSensorQueue, &value, portMAX_DELAY);
-        // Desplazo los valores hacia atrás en el buffer
-        for (int i = 9; i > 0; i--) {
-            values[i] = values[i-1];
-        }
-        values[0] = value;  // Guardo el nuevo valor en la primera posición
-
-        // Aplico el filtro de la ventana (sumar los N valores y promedios)
-        filter = 0;
-        N = get_N_value();
-        for (int i = 0 ; i < N ; i ++){
-            filter += values[i];
-        }
-
-        filter = filter / N ;
-        vIntToString(N, buffer);
-        sendUART0("\n[INFO] | TaskReceiverDataSensor | Value filtered: ");
-        sendUART0(buffer);
-
-        xQueueSend(xDisplayQueue, &filter, portMAX_DELAY ); 
-    }
-
-
-
-}
 
 
 
@@ -131,11 +94,6 @@ static void vTaskUpdateN(){
     }
 }
 
-static int get_N_value(){
-
-    return valor_ventana;
-
-}
 
 /*-----------------------------------------------------------*/
 
@@ -194,7 +152,7 @@ void vUART_ISR( void )
 {
 
     unsigned long ulStatus;
-    int nuevo_N = 0;
+    int nuevo_N = 1;
 
     // me fijo la flag de interrupcion
     ulStatus = UARTIntStatus( UART0_BASE, pdTRUE );

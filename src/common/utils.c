@@ -6,6 +6,7 @@ QueueHandle_t xSensorQueue;
 QueueHandle_t xUpdateNQueue;
 QueueHandle_t xDisplayQueue;
 
+int valor_ventana = 1;
 
 void sendUART0(const char *string) {
 	while (*string != '\0') {
