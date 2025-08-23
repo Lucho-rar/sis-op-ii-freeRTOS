@@ -1,8 +1,6 @@
 #include "display_task.h"
 #include "DriverLib.h"
 
-
-
 void vTaskDisplay(void *pvParameters) {
     (void) pvParameters;
 
@@ -10,7 +8,6 @@ void vTaskDisplay(void *pvParameters) {
     static int buffer_onda[96] = {0};
     int i;
     char buffer[DEFAULT_SIZE_BUFFERS];
-
 
     OSRAMStringDraw( "FreeRTOS - SO2", 0, 0 );
     vTaskDelay(500);
@@ -31,7 +28,6 @@ void vTaskDisplay(void *pvParameters) {
     vTaskDelay(2000);
     OSRAMClear();
 
-
     for (;;) {
         xQueueReceive(xDisplayQueue, &value_filter, portMAX_DELAY);
 
@@ -51,57 +47,45 @@ void vTaskDisplay(void *pvParameters) {
             if (input < DISPLAY_MIN_INPUT) input = DISPLAY_MIN_INPUT;
             if (input > DISPLAY_MAX_INPUT) input = DISPLAY_MAX_INPUT;
 
-            // Mapea todo el rango de entrada a 2*BITMAP_HALF_SIZE (mitad inferior y superior)
+            // Mapea todo el rango de entrada a 2*BITMAP_HALF_SIZE
             int total_steps = 2 * BITMAP_HALF_SIZE;
             int mapped_continuous = (input - DISPLAY_MIN_INPUT) * total_steps / (DISPLAY_MAX_INPUT - DISPLAY_MIN_INPUT);
 
             int bit_map_half, mapped;
             if (mapped_continuous < BITMAP_HALF_SIZE) {
                 bit_map_half = 1; // mitad inferior
-                mapped = BITMAP_MIN + mapped_continuous;
+                mapped = mapped_continuous; // 0-6
             } else {
                 bit_map_half = 0; // mitad superior
-                mapped = BITMAP_MIN + (mapped_continuous - BITMAP_HALF_SIZE);
+                mapped = mapped_continuous - BITMAP_HALF_SIZE; // 0-6
             }
 
             OSRAMImageDraw((const unsigned char *) bitMapping(mapped), i, bit_map_half, 1, 1);
         }
+
 #if !SENSOR_10HZ 
-    vIntToString(value_filter, buffer);
-    sendUART("\n[INFO] | TaskDisplay | Filtered value: ");
-    sendUART(buffer);
+        vIntToString(value_filter, buffer);
+        sendUART("\n[INFO] | TaskDisplay | Filtered value: ");
+        sendUART(buffer);
 #endif
     }
 }
 
 char * bitMapping(int valor) {
-    if ((valor <= 13) || (valor == 20)) {
-        return "\100"; // 01000000
+    switch(valor) {
+        case 0: return "\100"; // 01000000
+        case 1: return "\020"; // 00010000
+        case 2: return "\010"; // 00001000
+        case 3: return "\004"; // 00000100
+        case 4: return "\002"; // 00000010
+        case 5: return "\001"; // 00000001
+        case 6: return "\001"; // última fila también encendida
+        default: return " ";
     }
-    if ((valor == 14) || (valor == 21)) {
-        return " ";
-    }
-    if ((valor == 15) || (valor == 22)) {
-        return "\020"; // 00010000
-    }
-    if ((valor == 16) || (valor == 23)){
-        return "\010"; // 00001000
-    }
-    if ((valor == 17) || (valor == 24)){
-        return "\004"; // 00000100
-    }
-    if ((valor == 18) || (valor == 25)) {
-        return "\002"; // 00000010
-    }
-    if ((valor == 19) || (valor == 26)) {
-        return "\001"; // 00000001
-    }
-    return " "; // Valor fuera de rango
 }
 
 int mapToBitMapping(int value) {
-    if (value < 0) value = 0;
-    if (value > 20) value = 20;
-    // Mapea 0 -> 13, 20 -> 19 
-    return 13 + ((value * 6) / 20); // 6 = (19-13)
+    if (value < DISPLAY_MIN_INPUT) value = DISPLAY_MIN_INPUT;
+    if (value > DISPLAY_MAX_INPUT) value = DISPLAY_MAX_INPUT;
+    return (value * BITMAP_HALF_SIZE) / DISPLAY_MAX_INPUT; // 0-6
 }
