@@ -28,8 +28,8 @@ include makedefs
 RTOS_SOURCE_DIR=./FreeRTOS-Kernel
 DEMO_SOURCE_DIR=./Common/Minimal
 
-CFLAGS+= -g -O0 -I include -I hw_include -I . -I ${RTOS_SOURCE_DIR}/include \
-         -I ${RTOS_SOURCE_DIR}/portable/GCC/ARM_CM3 -I ../Common/include \
+CFLAGS+= -g -O0 -I include -I hw_include -I . -isystem ${RTOS_SOURCE_DIR}/include \
+         -isystem ${RTOS_SOURCE_DIR}/portable/GCC/ARM_CM3 -isystem ../Common/include \
          -I driverlib -I inc -D GCC_ARMCM3_LM3S102 -D inline= \
          -I include \
          -I include/tasks \
@@ -54,6 +54,8 @@ OBJS=${COMPILER}/main.o	\
      $(COMPILER)/tasks/display_task.o \
      $(COMPILER)/tasks/sensor_task.o \
      $(COMPILER)/tasks/receiver_task.o \
+     $(COMPILER)/tasks/updater_n_task.o \
+     $(COMPILER)/common/board.o \
      $(COMPILER)/common/utils.o \
 
 INIT_OBJS= ${COMPILER}/startup.o

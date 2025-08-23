@@ -8,7 +8,7 @@ QueueHandle_t xDisplayQueue;
 
 int valor_ventana = 1;
 
-void sendUART0(const char *string) {
+void sendUART(const char *string) {
 	while (*string != '\0') {
 		UARTCharPut(UART0_BASE, *string);
 		string++;
@@ -62,4 +62,11 @@ const char* getStateName(eTaskState state) {
         case eDeleted: return "Deleted";
         default: return "Unknown";
     }
+}
+
+
+int get_N_value(){
+
+return valor_ventana;
+
 }

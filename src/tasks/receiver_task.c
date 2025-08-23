@@ -1,19 +1,22 @@
 #include "receiver_task.h"
 
 void vTaskReceiverDataSensor(void *pvParameters){
-    int values[10] = {0};
+    (void) pvParameters;
+
+    int values[MAX_VALUES_AVERAGE] = {0};
     int value;
     int filter ;
     int N ;
+    char buffer[DEFAULT_SIZE_BUFFERS];
     N = get_N_value();
     vIntToString(N, buffer);
-    sendUART0("\n[INFO] | TaskReceiverDataSensor | N initial: ");
-    sendUART0(buffer);
+    sendUART("\n[INFO] | TaskReceiverDataSensor | N initial: ");
+    sendUART(buffer);
 
     for ( ; ; ){
         xQueueReceive(xSensorQueue, &value, portMAX_DELAY);
         // Desplazo los valores hacia atrás en el buffer
-        for (int i = 9; i > 0; i--) {
+        for (int i = MAX_VALUES_AVERAGE - 1; i > 0; i--) {
             values[i] = values[i-1];
         }
         values[0] = value;  // Guardo el nuevo valor en la primera posición
@@ -26,20 +29,17 @@ void vTaskReceiverDataSensor(void *pvParameters){
         }
 
         filter = filter / N ;
-        vIntToString(N, buffer);
-        sendUART0("\n[INFO] | TaskReceiverDataSensor | Value filtered: ");
-        sendUART0(buffer);
-
-        xQueueSend(xDisplayQueue, &filter, portMAX_DELAY ); 
+#if SENSOR_10HZ
+    xQueueSend(xDisplayQueue, &filter, portMAX_DELAY ); 
+#else
+    vIntToString(N, buffer);
+    sendUART("\n[INFO] | TaskReceiverDataSensor | Value filtered: ");
+    sendUART(buffer);
+    xQueueSend(xDisplayQueue, &filter, portMAX_DELAY ); 
+#endif
     }
 
 
 
 }
 
-
- int get_N_value(){
-
-    return valor_ventana;
-
-}

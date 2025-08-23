@@ -4,9 +4,12 @@
 
 
 void vTaskDisplay(void *pvParameters) {
+    (void) pvParameters;
+
     int value_filter;
     static int buffer_onda[96] = {0};
     int i;
+    char buffer[DEFAULT_SIZE_BUFFERS];
 
 
     OSRAMStringDraw( "FreeRTOS - SO2", 0, 0 );
@@ -61,12 +64,13 @@ void vTaskDisplay(void *pvParameters) {
                 mapped = BITMAP_MIN + (mapped_continuous - BITMAP_HALF_SIZE);
             }
 
-            OSRAMImageDraw(bitMapping(mapped), i, bit_map_half, 1, 1);
+            OSRAMImageDraw((const unsigned char *) bitMapping(mapped), i, bit_map_half, 1, 1);
         }
-
-        vIntToString(value_filter, buffer);
-        sendUART0("\n[INFO] | TaskDisplay | Filtered value: ");
-        sendUART0(buffer);
+#if !SENSOR_10HZ 
+    vIntToString(value_filter, buffer);
+    sendUART("\n[INFO] | TaskDisplay | Filtered value: ");
+    sendUART(buffer);
+#endif
     }
 }
 

@@ -16,22 +16,7 @@
 #include <stdarg.h>
 
 
-/* ################ defines del demo #################### */
-/* Delay between cycles of the 'check' task. */
-#define mainCHECK_DELAY            ( ( TickType_t ) 5000 / portTICK_PERIOD_MS )
-#define mainBAUD_RATE              ( 19200 )
-#define mainFIFO_SET               ( 0x10 )
-/* Demo task priorities. */
-#define mainQUEUE_POLL_PRIORITY    ( tskIDLE_PRIORITY + 2 )
-#define mainCHECK_TASK_PRIORITY    ( tskIDLE_PRIORITY + 3 )
-#define mainSEM_TEST_PRIORITY      ( tskIDLE_PRIORITY + 1 )
-#define mainBLOCK_Q_PRIORITY       ( tskIDLE_PRIORITY + 2 )
-/* Demo board specifics. */
-#define mainPUSH_BUTTON            GPIO_PIN_4
-/* Misc. */
-#define mainQUEUE_SIZE             ( 3 )
-#define mainDEBOUNCE_DELAY         ( ( TickType_t ) 150 / portTICK_PERIOD_MS )
-#define mainNO_DELAY               ( ( TickType_t ) 0 )
+#define DEFAULT_SIZE_BUFFERS 64
 
 
 // recursos compartidos
@@ -47,8 +32,8 @@ extern QueueHandle_t xDisplayQueue;
 
 extern int valor_ventana;
 
-static char buffer[50];
-void sendUART0(const char *string);
+void sendUART(const char *string);
 void vIntToString(int value, char *str);
-
+int get_N_value();
+const char* getStateName(eTaskState state) ;
 #endif /* UTILS_H */

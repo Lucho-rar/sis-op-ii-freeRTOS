@@ -4,7 +4,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "utils.h"
-
+#include "sensor_task.h"
 #define DISPLAY_MIN_INPUT 0
 #define DISPLAY_MAX_INPUT 20  
 

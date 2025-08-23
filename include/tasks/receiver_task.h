@@ -4,8 +4,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "utils.h"
+#include "sensor_task.h"
+#define MAX_VALUES_AVERAGE 10
 
 void vTaskReceiverDataSensor(void *pvParameters);
-int get_N_value();
 
 #endif /* RECEIVER_TASK_H */
