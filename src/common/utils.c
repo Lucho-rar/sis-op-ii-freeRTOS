@@ -1,4 +1,5 @@
 #include "utils.h"
+
 SemaphoreHandle_t xButtonSemaphore;
 SemaphoreHandle_t xMutexN;
 QueueHandle_t xPrintQueue;
@@ -8,42 +9,47 @@ QueueHandle_t xDisplayQueue;
 
 int valor_ventana = 1;
 
-void sendUART(const char *string) {
-	while (*string != '\0') {
-		UARTCharPut(UART0_BASE, *string);
-		string++;
-	}
+void sendUART(const char* string)
+{
+    while (*string != '\0')
+    {
+        UARTCharPut(UART0_BASE, *string);
+        string++;
+    }
 }
 
-void vIntToString(int num, char *str) {
+void vIntToString(int num, char* str)
+{
     int i = 0;
     int is_negative = 0;
 
-    // Manejar el caso de número negativo
-    if (num < 0) {
+    if (num < 0)
+    {
         is_negative = 1;
         num = -num;
     }
 
-    // Convertir cada dígito del número en un carácter
-    do {
-        str[i++] = (num % 10) + '0'; // Convertir el dígito a su carácter ASCII correspondiente
+    // Convert each digit of the number to a character
+    do
+    {
+        str[i++] = (num % 10) + '0'; // convert digit to ASCII
         num /= 10;
     } while (num > 0);
 
-    // Agregar el signo negativo si es necesario
-    if (is_negative) {
+    if (is_negative)
+    {
         str[i++] = '-';
     }
 
-    // Terminar la cadena
+    // Finish chain
     str[i] = '\0';
 
-    // Invertir la cadena porque los dígitos fueron agregados en orden inverso
+    // invert
     int start = 0;
     int end = i - 1;
     char temp;
-    while (start < end) {
+    while (start < end)
+    {
         temp = str[start];
         str[start] = str[end];
         str[end] = temp;
@@ -52,21 +58,27 @@ void vIntToString(int num, char *str) {
     }
 }
 
-
-const char* getStateName(eTaskState state) {
-    switch (state) {
-        case eRunning: return "Running";
-        case eReady: return "Ready";
-        case eBlocked: return "Blocked";
-        case eSuspended: return "Suspended";
-        case eDeleted: return "Deleted";
-        default: return "Unknown";
+const char* getStateName(eTaskState state)
+{
+    switch (state)
+    {
+    case eRunning:
+        return "Running";
+    case eReady:
+        return "Ready";
+    case eBlocked:
+        return "Blocked";
+    case eSuspended:
+        return "Suspended";
+    case eDeleted:
+        return "Deleted";
+    default:
+        return "Unknown";
     }
 }
 
+int get_N_value()
+{
 
-int get_N_value(){
-
-return valor_ventana;
-
+    return valor_ventana;
 }

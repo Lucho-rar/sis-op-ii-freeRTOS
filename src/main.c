@@ -1,36 +1,32 @@
 
-#include "tasks/monitor_task.h"
-#include "common/utils.h"
-#include "tasks/display_task.h"
-#include "tasks/sensor_task.h"
-#include "tasks/receiver_task.h"
-#include "tasks/updater_n_task.h"
 #include "DriverLib.h"
 #include "common/board.h"
+#include "common/utils.h"
+#include "tasks/display_task.h"
+#include "tasks/monitor_task.h"
+#include "tasks/receiver_task.h"
+#include "tasks/sensor_task.h"
+#include "tasks/updater_n_task.h"
 
-
-
-int main( void )
+int main(void)
 {
+    // Init board and variables
     boardInit();
 
-    // creacion de tareas
-    xTaskCreate(vTaskSensor, "Sensor", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
-    xTaskCreate(vTaskReceiverDataSensor, "Receiver", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
-    xTaskCreate(vTaskDisplay, "Display", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
-    xTaskCreate(vTaskUpdateN, "UpdateN", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
-    xTaskCreate(vTaskMonitor, "Monitor", configMINIMAL_STACK_SIZE * 2, NULL, mainCHECK_TASK_PRIORITY + 1, NULL);
+    // Task create
+    xTaskCreate(vTaskSensor, "Sensor", 80, NULL, PRIORITY_HIGH, NULL);
+    xTaskCreate(vTaskReceiverDataSensor, "Receiver", 160, NULL, PRIORITY_HIGH + 1, NULL);
+    xTaskCreate(vTaskDisplay, "Display", 100, NULL, PRIORITY_MEDIUM, NULL);
+    xTaskCreate(vTaskUpdateN, "UpdateN", 120, NULL, PRIORITY_MEDIUM + 1, NULL);
+    xTaskCreate(vTaskMonitor, "Monitor", 80, NULL, PRIORITY_LOW, NULL);
 
-    // colas 
+    // Queue
     xSensorQueue = xQueueCreate(50, sizeof(unsigned long));
-    xDisplayQueue = xQueueCreate(50 , sizeof(unsigned long ));
+    xDisplayQueue = xQueueCreate(50, sizeof(unsigned long));
     xUpdateNQueue = xQueueCreate(50, sizeof(unsigned long));
 
-
-    /* Start the scheduler. */
+    // Start scheduler
     vTaskStartScheduler();
 
     return 0;
 }
-
-
