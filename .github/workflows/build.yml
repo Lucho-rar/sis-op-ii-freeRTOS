@@ -9,19 +9,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Clona el repo con submódulos
+      # Clone
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           submodules: true
 
-      # Instala toolchain ARM (gcc-arm-none-eabi)
+      # Install
       - name: Install ARM GCC
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-arm-none-eabi make
 
-      # Compila tu proyecto
+      # Compile
       - name: Build project
         run: make
+
+      # Upload artifact
+      - name: Upload RTOSDemo.axf
+        uses: actions/upload-artifact@v4
+        with:
+          name: RTOSDemo.axf
+          path: gcc/RTOSDemo.axf
 
