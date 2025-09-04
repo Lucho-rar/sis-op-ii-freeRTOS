@@ -142,7 +142,7 @@ extern unsigned long _ebss;
 void
 ResetISR(void)
 {
-    unsigned long *pulSrc, *pulDest;
+    // unsigned long *pulSrc, *pulDest;
 
     //
     // Copy the data segment initializers from flash to SRAM.
@@ -218,5 +218,15 @@ IntDefaultHandler(void)
     //
     while(1)
     {
+    }
+}
+
+
+void
+vGPIO_ISR(void)
+{
+    while (1)
+    {
+       
     }
 }
