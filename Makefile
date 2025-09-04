@@ -28,11 +28,19 @@ include makedefs
 RTOS_SOURCE_DIR=./FreeRTOS-Kernel
 DEMO_SOURCE_DIR=./Common/Minimal
 
-CFLAGS+= -I include -I hw_include -I . -I ${RTOS_SOURCE_DIR}/include \
-         -I ${RTOS_SOURCE_DIR}/portable/GCC/ARM_CM3 -I ../Common/include \
+CFLAGS+= -g -O0 -I include -I hw_include -I . -isystem ${RTOS_SOURCE_DIR}/include \
+         -isystem ${RTOS_SOURCE_DIR}/portable/GCC/ARM_CM3 -isystem ../Common/include \
          -I driverlib -I inc -D GCC_ARMCM3_LM3S102 -D inline= \
+         -I include \
+         -I include/tasks \
+         -I include/common \
 		 -Wall -Wextra -pedantic 
-VPATH=${RTOS_SOURCE_DIR}:${RTOS_SOURCE_DIR}/portable/MemMang:${RTOS_SOURCE_DIR}/portable/GCC/ARM_CM3:${DEMO_SOURCE_DIR}:init:hw_include
+VPATH=${RTOS_SOURCE_DIR} \
+      ${RTOS_SOURCE_DIR}/portable/MemMang \
+      ${RTOS_SOURCE_DIR}/portable/GCC/ARM_CM3 \
+      ${DEMO_SOURCE_DIR} \
+      init hw_include \
+      src src/tasks src/common
 
 OBJS=${COMPILER}/main.o	\
 	  ${COMPILER}/list.o    \
@@ -42,6 +50,13 @@ OBJS=${COMPILER}/main.o	\
       ${COMPILER}/heap_1.o  \
 	  ${COMPILER}/osram96x16.o \
 	  ${COMPILER}/syscalls.o \
+     $(COMPILER)/tasks/monitor_task.o \
+     $(COMPILER)/tasks/display_task.o \
+     $(COMPILER)/tasks/sensor_task.o \
+     $(COMPILER)/tasks/receiver_task.o \
+     $(COMPILER)/tasks/updater_n_task.o \
+     $(COMPILER)/common/board.o \
+     $(COMPILER)/common/utils.o \
 
 INIT_OBJS= ${COMPILER}/startup.o
 
@@ -71,6 +86,12 @@ ${COMPILER}/RTOSDemo.axf: ${INIT_OBJS} ${OBJS} ${LIBS}
 SCATTER_RTOSDemo=standalone.ld
 ENTRY_RTOSDemo=ResetISR
 
+# Regla genérica para compilar .c → .o
+${COMPILER}/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
 #
 #
 # Include the automatically generated dependency files.
@@ -79,6 +100,5 @@ ENTRY_RTOSDemo=ResetISR
 
 
 	 
-
 
 

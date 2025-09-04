@@ -49,6 +49,14 @@
 //*****************************************************************************
 #define SSD0303_ADDR            0x3d
 
+
+void OSRAMDelay(unsigned long ulCount)
+{
+    volatile unsigned long i;
+    for(i = 0; i < ulCount; i++)
+        __asm("nop");
+}
+
 //*****************************************************************************
 //
 // A 5x7 font (in a 6x8 cell, where the sixth column is omitted from this
@@ -293,15 +301,15 @@ OSRAMDelay(unsigned long ulCount)
           "    bx      lr");
 }
 #endif
-#if defined(gcc)
-static void __attribute__((naked))
-OSRAMDelay(unsigned long ulCount)
-{
-    __asm("    subs    r0, #1\n"
-          "    bne     OSRAMDelay\n"
-          "    bx      lr");
-}
-#endif
+// #if defined(gcc)
+// void __attribute__((naked))
+// OSRAMDelay(unsigned long ulCount)
+// {
+//     __asm("    subs    r0, #1\n"
+//           "    bne     OSRAMDelay\n"
+//           "    bx      lr");
+// }
+// #endif
 #if defined(rvmdk) || defined(__ARMCC_VERSION)
 __asm void
 OSRAMDelay(unsigned long ulCount)
