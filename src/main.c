@@ -12,13 +12,13 @@ int main(void)
 {
     // Init board and variables
     boardInit();
-
+    vConfigureTimerForRunTimeStats();
     // Task create
-    xTaskCreate(vTaskSensor, "Sensor", 80, NULL, PRIORITY_HIGH, NULL);
-    xTaskCreate(vTaskReceiverDataSensor, "Receiver", 160, NULL, PRIORITY_HIGH + 1, NULL);
-    xTaskCreate(vTaskDisplay, "Display", 100, NULL, PRIORITY_MEDIUM, NULL);
-    xTaskCreate(vTaskUpdateN, "UpdateN", 120, NULL, PRIORITY_MEDIUM + 1, NULL);
-    xTaskCreate(vTaskMonitor, "Monitor", 80, NULL, PRIORITY_LOW, NULL);
+    xTaskCreate(vTaskSensor, "Sensor", STACK_SIZE_SENSE, NULL, PRIORITY_HIGH, NULL);
+    xTaskCreate(vTaskReceiverDataSensor, "Receiver", STACK_SIZE_RECEIVER, NULL, PRIORITY_HIGH + 1, NULL);
+    xTaskCreate(vTaskDisplay, "Display", STACK_SIZE_DISPLAY, NULL, PRIORITY_MEDIUM, NULL);
+    xTaskCreate(vTaskUpdateN, "UpdateN", STACK_SIZE_UPDATE, NULL, PRIORITY_MEDIUM + 1, NULL);
+    xTaskCreate(vTaskMonitor, "Monitor", STACK_SIZE_MONITOR, NULL, PRIORITY_LOW, NULL);
 
     // Queue
     xSensorQueue = xQueueCreate(50, sizeof(unsigned long));

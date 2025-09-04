@@ -86,15 +86,16 @@ int get_N_value();
  */
 const char* getStateName(eTaskState state);
 
+void vConfigureTimerForRunTimeStats(void);
 #define PRIORITY_LOW 1
 #define PRIORITY_MEDIUM 2
 #define PRIORITY_HIGH 3
 #define PRIORITY_CRITICAL 4
 
 #define STACK_SIZE_SENSE 80
-#define STACK_SIZE_RECEIVER 100
-#define STACK_SIZE_DISPLAY 80
-#define STACK_SIZE_UPDATE 100
-#define STACK_SIZE_MONITOR 90
+#define STACK_SIZE_RECEIVER 160
+#define STACK_SIZE_DISPLAY 100
+#define STACK_SIZE_UPDATE 120
+#define STACK_SIZE_MONITOR 80
 
 #endif /* UTILS_H */

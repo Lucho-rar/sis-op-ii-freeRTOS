@@ -5,7 +5,7 @@ void vTaskMonitor(void* pvParameters)
     (void)pvParameters;
 
     char buffer_string[DEFAULT_SIZE_BUFFERS];
-    TaskStatus_t *pxTaskStatusArray;
+    TaskStatus_t* pxTaskStatusArray;
     UBaseType_t uxArraySize, uxTasksReturned;
     uint32_t ulTotalRunTime;
 
@@ -14,7 +14,8 @@ void vTaskMonitor(void* pvParameters)
 
     // reserve memory for array
     pxTaskStatusArray = pvPortMalloc(uxArraySize * sizeof(TaskStatus_t));
-    if (pxTaskStatusArray == NULL) vTaskDelete(NULL);
+    if (pxTaskStatusArray == NULL)
+        vTaskDelete(NULL);
     while (1)
     {
         if (pxTaskStatusArray != NULL)
@@ -46,6 +47,15 @@ void vTaskMonitor(void* pvParameters)
                 sendUART("\n  Task Number: ");
                 vIntToString(pxTaskStatusArray[i].xTaskNumber, buffer_string);
                 sendUART(buffer_string);
+
+                uint32_t percentCPU = 0;
+                if (ulTotalRunTime > 0)
+                    percentCPU = (pxTaskStatusArray[i].ulRunTimeCounter * 100UL) / ulTotalRunTime;
+
+                sendUART("\n  CPU Usage: ");
+                vIntToString(percentCPU, buffer_string);
+                sendUART(buffer_string);
+                sendUART(" %");
 
                 sendUART("\n  ----------------------------------------");
             }

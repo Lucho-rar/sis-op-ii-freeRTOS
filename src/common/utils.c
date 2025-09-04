@@ -82,3 +82,7 @@ int get_N_value()
 
     return valor_ventana;
 }
+
+void vConfigureTimerForRunTimeStats(void)
+{
+}

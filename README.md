@@ -340,3 +340,33 @@ y desde otra terminal
  gdb-multiarch gcc/RTOSDemo.axf
 (gdb) target remote :1234
 ```
+
+## FreeRTOS docs used
+```c
+xTaskCreate(
+                    vTaskCode,       /* Function that implements the task. */
+                    "NAME",          /* Text name for the task. */
+                    STACK_SIZE,      /* Stack size in words, not bytes. */
+                    ( void * ) 1,    /* Parameter passed into the task. */
+                    tskIDLE_PRIORITY,/* Priority at which the task is created. */
+                    &xHandle );      /* Used to pass out the created task's handle. */
+
+ QueueHandle_t xQueueCreate( UBaseType_t uxQueueLength,
+                             UBaseType_t uxItemSize );
+
+volatile TickType_t xTaskGetTickCount( void ); 
+
+void vTaskDelayUntil( TickType_t *pxPreviousWakeTime,
+                      const TickType_t xTimeIncrement );
+void vTaskDelay( const TickType_t xTicksToDelay );
+
+UBaseType_t uxTaskGetNumberOfTasks( void ); //Number of task from system
+
+UBaseType_t uxTaskGetSystemState( TaskStatus_t * const pxTaskStatusArray,
+                                  const UBaseType_t uxArraySize,
+                                  uint32_t * const pulTotalRunTime );
+    // Complete array with TaskStatus_t and info from each task
+    // pulTotalRunTime total CPU
+```
+
+

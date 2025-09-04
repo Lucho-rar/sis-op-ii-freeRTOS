@@ -50,7 +50,7 @@
 #define configUSE_TRACE_FACILITY	1
 #define configUSE_16_BIT_TICKS		0
 #define configIDLE_SHOULD_YIELD		0
-#define configGENERATE_RUN_TIME_STATS    0
+#define configGENERATE_RUN_TIME_STATS    1
 #define configMAX_PRIORITIES		( 5 )
 
 /* Set the following definitions to 1 to include the API function, or zero
@@ -66,6 +66,9 @@ to exclude the API function. */
 #define configUSE_TRACE_FACILITY         1
 #define INCLUDE_xTaskGetHandle         1
 #define INCLUDE_uxTaskGetStackHighWaterMark 1
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()  ((void)0)
+#define portGET_RUN_TIME_COUNTER_VALUE()  (xTaskGetTickCount())
+
 // #define configRECORD_STACK_HIGH_ADDRESS 1
 
 #define configKERNEL_INTERRUPT_PRIORITY 		255
